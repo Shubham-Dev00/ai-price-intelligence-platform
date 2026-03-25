@@ -1,8 +1,8 @@
 # AI-Enhanced E-Commerce Price Intelligence and Alert Platform
 
-A production-minded, portfolio-grade Flask web application for tracking product prices from e-commerce websites such as Amazon and Flipkart, analyzing price history, detecting suspicious price anomalies, and notifying users when prices drop below their target thresholds.
+A advanced level Flask web application for tracking product prices from e-commerce websites such as Amazon and Flipkart, analyzing price history, detecting suspicious price anomalies, and notifying users when prices drop below their target thresholds.
 
-This project is designed as a serious full-stack system, not a toy script. It uses modular Flask architecture, background job support, normalized SQLAlchemy models, analytics services, explainable AI-style insights, and deployment-ready structure.
+It uses modular Flask architecture, background job support, normalized SQLAlchemy models, analytics services, explainable AI-style insights, and deployment-ready structure.
 
 ---
 
