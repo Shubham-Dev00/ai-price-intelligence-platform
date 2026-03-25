@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card shadow-sm kpi-card"><div class="card-body"><small>Total Tracked</small><h3>{{ kpis.total_tracked_products }}</h3></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm kpi-card"><div class="card-body"><small>Below Target</small><h3>{{ kpis.products_below_target }}</h3></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm kpi-card"><div class="card-body"><small>Alerts Sent</small><h3>{{ kpis.alerts_sent }}</h3></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm kpi-card"><div class="card-body"><small>Scrape Failures</small><h3>{{ kpis.recent_scrape_failures }}</h3></div></div></div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Recent Products</h4>
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-primary btn-sm">Manage Products</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead><tr><th>Title</th><th>Latest Price</th><th>Status</th><th>Target</th><th></th></tr></thead>
+                <tbody>
+                {% for product in recent_products %}
+                    <tr>
+                        <td>{{ product.title }}</td>
+                        <td>₹{{ "%.2f"|format(product.latest_price or 0) }}</td>
+                        <td><span class="badge text-bg-{% if product.last_status == 'success' %}success{% else %}danger{% endif %}">{{ product.last_status }}</span></td>
+                        <td>{% if product.target_price %}₹{{ "%.2f"|format(product.target_price) }}{% else %}-{% endif %}</td>
+                        <td><a href="{{ url_for('products.detail', product_id=product.id) }}" class="btn btn-outline-secondary btn-sm">View</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5" class="text-center text-muted">No products tracked yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

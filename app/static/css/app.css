@@ -1,0 +1,13 @@
+body {
+    font-size: 0.97rem;
+}
+.kpi-card {
+    border: none;
+}
+.card {
+    border-radius: 1rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.table td, .table th {
+    vertical-align: middle;
+}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="mb-4">Admin Dashboard</h1>
+<div class="row g-3 mb-4">
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Users</small><h4>{{ data.total_users }}</h4></div></div></div>
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Products</small><h4>{{ data.total_products }}</h4></div></div></div>
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Success</small><h4>{{ data.successful_scrapes }}</h4></div></div></div>
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Failures</small><h4>{{ data.failed_scrapes }}</h4></div></div></div>
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Alerts</small><h4>{{ data.alerts_sent }}</h4></div></div></div>
+    <div class="col-md-2"><div class="card shadow-sm"><div class="card-body"><small>Health</small><h4>{{ data.system_health }}</h4></div></div></div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h4>Operational Logs Overview</h4>
+        <ul class="list-group list-group-flush">
+            {% for item in data.recent_audits %}
+                <li class="list-group-item">{{ item.created_at }} — {{ item.action }} — {{ item.entity_type }} #{{ item.entity_id or "-" }}</li>
+            {% else %}
+                <li class="list-group-item text-muted">No admin audit entries yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

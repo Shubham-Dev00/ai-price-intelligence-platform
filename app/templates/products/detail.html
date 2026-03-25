@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-1">{{ product.title }}</h2>
+        <div class="text-muted">{{ product.source_site|title }} • {{ product.product_url }}</div>
+    </div>
+    <div class="d-flex gap-2">
+        <form method="post" action="{{ url_for('products.refresh', product_id=product.id) }}">
+            {{ form.hidden_tag() }}
+            <button class="btn btn-outline-primary">Refresh Now</button>
+        </form>
+        <form method="post" action="{{ url_for('products.delete', product_id=product.id) }}" onsubmit="return confirm('Delete this product?');">
+            {{ form.hidden_tag() }}
+            <button class="btn btn-outline-danger">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><small>Latest</small><h4>{% if metrics.latest %}₹{{ "%.2f"|format(metrics.latest) }}{% else %}-{% endif %}</h4></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><small>Lowest</small><h4>{% if metrics.lowest %}₹{{ "%.2f"|format(metrics.lowest) }}{% else %}-{% endif %}</h4></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><small>Highest</small><h4>{% if metrics.highest %}₹{{ "%.2f"|format(metrics.highest) }}{% else %}-{% endif %}</h4></div></div></div>
+    <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><small>Average</small><h4>{% if metrics.average %}₹{{ "%.2f"|format(metrics.average) }}{% else %}-{% endif %}</h4></div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0">Price History</h4>
+                    <span class="badge text-bg-{% if product.last_status == 'success' %}success{% elif product.last_status in ['failed', 'scrape_blocked'] %}danger{% else %}warning{% endif %}">
+                        {{ product.last_status|replace('_', ' ') }}
+                    </span>
+                </div>
+                {% if chart_values %}
+                    <canvas id="priceChart"></canvas>
+                {% else %}
+                    <div class="alert alert-warning mb-0">
+                        No validated price history yet. This product may have been saved through manual fallback because the retailer blocked scraping.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4>Recent Snapshots</h4>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead><tr><th>Time</th><th>Price</th><th>Availability</th><th>Anomaly</th></tr></thead>
+                        <tbody>
+                        {% for snapshot in snapshots|reverse %}
+                            <tr>
+                                <td>{{ snapshot.captured_at }}</td>
+                                <td>₹{{ "%.2f"|format(snapshot.price) }}</td>
+                                <td>{{ snapshot.availability or "-" }}</td>
+                                <td>{% if snapshot.is_anomalous %}<span class="badge text-bg-warning">Yes ({{ snapshot.anomaly_score }})</span>{% else %}<span class="badge text-bg-success">No</span>{% endif %}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted">No snapshots available.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4>Recent Scrape Attempts</h4>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Time</th><th>Status</th><th>HTTP</th><th>Parser</th><th>Notes</th></tr></thead>
+                        <tbody>
+                        {% for attempt in scrape_attempts %}
+                        <tr>
+                            <td>{{ attempt.attempted_at }}</td>
+                            <td><span class="badge text-bg-{% if attempt.status == 'success' %}success{% else %}danger{% endif %}">{{ attempt.status }}</span></td>
+                            <td>{{ attempt.http_status or '-' }}</td>
+                            <td>{{ attempt.parser_used or '-' }}</td>
+                            <td>
+                                {% if attempt.error_message %}
+                                    {{ attempt.error_message }}
+                                {% elif attempt.scraped_price is not none %}
+                                    Price captured: ₹{{ "%.2f"|format(attempt.scraped_price) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">No scrape attempts recorded yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4>Alert History</h4>
+                <ul class="list-group list-group-flush">
+                    {% for alert in alert_history %}
+                    <li class="list-group-item">
+                        {{ alert.triggered_at }} — ₹{{ "%.2f"|format(alert.price_at_alert) }} — priority {{ alert.priority_score }}
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">No alerts sent yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4>Edit Product</h4>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">{{ form.title.label(class="form-label") }} {{ form.title(class="form-control") }}</div>
+                    <div class="mb-3">{{ form.target_price.label(class="form-label") }} {{ form.target_price(class="form-control") }}</div>
+                    <div class="form-check mb-3">{{ form.is_tracking_enabled(class="form-check-input") }} {{ form.is_tracking_enabled.label(class="form-check-label") }}</div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4>AI Insight Panel</h4>
+                <ul class="list-group list-group-flush">
+                    {% for insight in insights %}
+                    <li class="list-group-item">{{ insight.summary }}</li>
+                    {% else %}
+                    <li class="list-group-item text-muted">No insights generated yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if chart_values %}
+<script>
+const ctx = document.getElementById("priceChart");
+new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: {{ chart_labels|tojson }},
+        datasets: [{
+            label: "Price",
+            data: {{ chart_values|tojson }},
+            tension: 0.25
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: true } }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

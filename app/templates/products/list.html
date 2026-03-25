@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-3">Add Product</h3>
+                <p class="text-muted small">
+                    Paste an Amazon or Flipkart product link. If the retailer blocks scraping, add a title override and save it anyway.
+                </p>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">{{ form.product_url.label(class="form-label") }} {{ form.product_url(class="form-control", placeholder="Paste Amazon or Flipkart URL") }}</div>
+                    <div class="mb-3">{{ form.title.label(class="form-label") }} {{ form.title(class="form-control", placeholder="Optional custom title (recommended if scraping may fail)") }}</div>
+                    <div class="mb-3">{{ form.target_price.label(class="form-label") }} {{ form.target_price(class="form-control", placeholder="e.g. 49999") }}</div>
+                    <div class="form-check mb-3">{{ form.is_tracking_enabled(class="form-check-input") }} {{ form.is_tracking_enabled.label(class="form-check-label") }}</div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+                {% if duplicates %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <strong>Possible duplicates detected:</strong>
+                    <ul class="mb-0">
+                        {% for item in duplicates %}
+                            <li>Product #{{ item.product_id }} — {{ item.reason }} (score {{ item.score }})</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="mb-3">Tracked Products</h3>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead><tr><th>Title</th><th>Price</th><th>Target</th><th>Status</th><th></th></tr></thead>
+                        <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ product.title }}</div>
+                                    <div class="text-muted small">{{ product.source_site|title }}</div>
+                                </td>
+                                <td>{% if product.latest_price is not none %}₹{{ "%.2f"|format(product.latest_price) }}{% else %}<span class="text-muted">Not captured yet</span>{% endif %}</td>
+                                <td>{% if product.target_price %}₹{{ "%.2f"|format(product.target_price) }}{% else %}-{% endif %}</td>
+                                <td>
+                                    {% set status_color = 'secondary' %}
+                                    {% if product.last_status == 'success' %}
+                                        {% set status_color = 'success' %}
+                                    {% elif product.last_status in ['failed', 'scrape_blocked'] %}
+                                        {% set status_color = 'danger' %}
+                                    {% elif product.last_status == 'pending_manual_review' %}
+                                        {% set status_color = 'warning' %}
+                                    {% endif %}
+                                    <span class="badge text-bg-{{ status_color }}">{{ product.last_status|replace('_', ' ') }}</span>
+                                    {% if product.is_below_target %}<span class="badge text-bg-info">below target</span>{% endif %}
+                                    {% if product.alert_active %}<span class="badge text-bg-warning">alert sent</span>{% endif %}
+                                    {% if not product.is_tracking_enabled %}<span class="badge text-bg-secondary">tracking off</span>{% endif %}
+                                </td>
+                                <td><a href="{{ url_for('products.detail', product_id=product.id) }}" class="btn btn-outline-primary btn-sm">Details</a></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-center text-muted">No tracked products yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

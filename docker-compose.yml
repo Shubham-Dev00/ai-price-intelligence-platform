@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    command: gunicorn -b 0.0.0.0:5000 run:app
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build: .
+    command: celery -A app.services.celery_worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: priceintel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
